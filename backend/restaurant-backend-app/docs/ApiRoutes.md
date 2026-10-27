@@ -1188,17 +1188,32 @@ Response: 200 OK
 ```
 
 ### `GET` /guest/groups/{groupReservationId}/sessions
+Owner only (Cognito). Returns every participant session (owner's own session first, `type: "Owner"`),
+submitted or not. `total` per participant = sum(price × quantity); top-level `total` = sum of all participants.
+`dish` is the full dish object (same as `GET /dishes/{id}`), shortened here.
+
 Response: 200 OK
 ```json
-[
-  {
-    "id": "string",
-    "groupReservationId": "string",
-    "guestName": "string",
-    "status": "string"
-  }
-]
+{
+  "participants": [
+    {
+      "id": "session1",
+      "type": "Guest",
+      "name": "Andrii",
+      "items": [
+        {
+          "dish": { "id": "dish1", "name": "Caesar Salad", "price": 180 },
+          "quantity": 2
+        }
+      ],
+      "total": 360,
+      "isSubmitted": true
+    }
+  ],
+  "total": 360
+}
 ```
+Errors: `401` no token, `403` caller is not the reservation owner, `404` group reservation or reservation not found.
 
 ### `DELETE` /guest/groups/{groupReservationId}/sessions/{guestSessionId}
 Response: 200 OK

@@ -471,6 +471,18 @@ public class GuestSessionServiceTests
 
         Assert.False(result);
     }
+
+    [Theory]
+    [InlineAutoData("eyJraWQiOiJhYmMifQ.eyJzdWIiOiJ1c2VyIn0.c2lnbmF0dXJl")] // Cognito-style JWT
+    [InlineAutoData("not base64!")]
+    public async Task IsAuthorizedAsync_TokenIsNotBase64_ReturnsFalseWithoutLookup(string token, string guestSessionId)
+    {
+        bool result = await _guestSessionService.IsAuthorizedAsync(token, guestSessionId);
+
+        Assert.False(result);
+        _mockGuestSessionRepository.Verify(r => r.GetByTokenHash(It.IsAny<string>()), Times.Never);
+    }
+
     [Theory]
     [AutoData]
     public async Task SubmitCartAsync_Valid_SubmitsSuccessfuilly(GuestSession guestSession, GroupReservation groupReservation, Dish[] dishes)

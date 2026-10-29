@@ -145,6 +145,18 @@ public class GroupReservationServiceSubmitTests
     }
 
     [Fact]
+    public async Task SubmitGroupPreOrderAsync_ConcurrentSubmitWonTheRace_ThrowsGroupReservationSubmittedException()
+    {
+        SetupSessions(Session("andrii", submitted: true, ("dish1", 2)));
+        _groupReservationRepositoryMock
+            .Setup(r => r.SaveGroupReservationWithOrderAsync(_group, _order))
+            .ThrowsAsync(new ConcurrentModificationException("Group reservation was changed by another request."));
+
+        await Assert.ThrowsAsync<GroupReservationSubmittedException>(
+            () => _service.SubmitGroupPreOrderAsync(OwnerId, GroupId, ReservationId));
+    }
+
+    [Fact]
     public async Task SubmitGroupPreOrderAsync_ReservationNotFound_ThrowsReservationNotFoundException()
     {
         await AssertThrowsWithoutSaving<ReservationNotFoundException>(

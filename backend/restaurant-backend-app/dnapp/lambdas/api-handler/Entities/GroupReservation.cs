@@ -17,4 +17,8 @@ public class GroupReservation
 
     [DynamoDBProperty("status")]
     public GroupReservationStatus Status { get; set; }
+
+    // Optimistic locking: a save fails if someone else saved the item after it was loaded.
+    [DynamoDBVersion("version")]
+    public int? Version { get; set; }
 }

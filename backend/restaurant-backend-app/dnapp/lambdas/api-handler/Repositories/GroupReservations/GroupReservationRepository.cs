@@ -1,6 +1,8 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.Model;
 using APIHandler.Constants;
 using APIHandler.Entities;
+using APIHandler.Exceptions;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -43,7 +45,17 @@ public class GroupReservationRepository : IGroupReservationRepository
         orderWrite.AddSaveItem(order);
 
         // Both items are written in one DynamoDB transaction: all or nothing.
-        await _dynamoDbContext.CreateMultiTableTransactWrite(groupWrite, orderWrite).ExecuteAsync();
+        // The group's version check makes a second concurrent submit fail instead of adding the dishes twice.
+        try
+        {
+            await _dynamoDbContext.CreateMultiTableTransactWrite(groupWrite, orderWrite).ExecuteAsync();
+        }
+        catch (TransactionCanceledException exception)
+            when (exception.CancellationReasons?.Any(r => r.Code == "ConditionalCheckFailed") == true)
+        {
+            throw new ConcurrentModificationException(
+                $"Group reservation {groupReservation.GroupReservationId} was changed by another request.", exception);
+        }
     }
 
     public async Task<GroupReservation?> GetGroupReservationByTokenAsync(string token)

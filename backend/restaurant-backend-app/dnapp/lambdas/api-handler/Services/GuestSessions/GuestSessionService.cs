@@ -33,7 +33,12 @@ public class GuestSessionService(
 {
     public async Task<bool> IsAuthorizedAsync(string guestSessionToken, string guestSessionId)
     {
-        string hash = Convert.ToBase64String(SHA256.HashData(Convert.FromBase64String(guestSessionToken)));
+        // Not a guest token (e.g. a Cognito JWT): reject it instead of failing with a 500.
+        byte[] tokenBytes = new byte[guestSessionToken.Length];
+        if (!Convert.TryFromBase64String(guestSessionToken, tokenBytes, out int tokenLength))
+            return false;
+
+        string hash = Convert.ToBase64String(SHA256.HashData(tokenBytes.AsSpan(0, tokenLength)));
         GuestSession? guestSession = await guestSessionRepository.GetByTokenHash(hash);
         if (guestSession is null)
             return false;

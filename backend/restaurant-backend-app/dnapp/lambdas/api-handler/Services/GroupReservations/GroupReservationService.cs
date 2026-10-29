@@ -191,7 +191,15 @@ public class GroupReservationService(
         order.Status = OrderStatus.SubmittedByCustomer;
         group.Status = GroupReservationStatus.Submitted;
 
-        await groupReservationRepository.SaveGroupReservationWithOrderAsync(group, order);
+        try
+        {
+            await groupReservationRepository.SaveGroupReservationWithOrderAsync(group, order);
+        }
+        catch (ConcurrentModificationException)
+        {
+            // Another submit (e.g. a double click) won the race; nothing from this request was written.
+            throw new GroupReservationSubmittedException();
+        }
 
         return dishes;
     }

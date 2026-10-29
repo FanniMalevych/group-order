@@ -555,12 +555,17 @@ Response: `200 OK`
 ```
 
 ### `GET` /reservations/{reservationId}/guest-session-id
+Owner only (Cognito). Returns the owner's own guest session in the reservation's group,
+creating it on the first call.
+
 Response: `200 OK`
 ```json
 {
   "guestSessionId": "string"
 }
 ```
+Errors: `401` no token, `403` caller is not the reservation owner, `404` reservation or its group
+reservation not found, `400` group is submitted or closed and no owner session exists yet.
 
 
 ### `DELETE` /reservations
@@ -1180,12 +1185,28 @@ Response: 200 OK
 ```
 
 ### `POST` /group-reservations/{groupReservationId}/submit
-Response: 200 OK
+Owner only (Cognito). Takes the submitted participant sessions (the owner's included), groups their
+dishes by `dishId`, adds them to the reservation's order (quantities merge with dishes already in
+the order), then sets the order to `SubmittedByCustomer` and the group reservation to `Submitted`
+in one transaction. The response lists the submitted dishes, not the merged order.
+
+Request body:
 ```json
 {
-  "message": "Group reservation pre-order submitted successfully."
+  "reservationId": "string"
 }
 ```
+
+Response: 200 OK
+```json
+[
+  { "dishId": "dish1", "quantity": 3 },
+  { "dishId": "dish2", "quantity": 2 }
+]
+```
+Errors: `401` no token, `403` caller is not the reservation owner, `404` reservation or group
+reservation not found, `400` invalid body / group belongs to another reservation / no submitted
+sessions / submitted sessions have no dishes / order not found, `409` group already submitted or closed.
 
 ### `GET` /guest/groups/{groupReservationId}/sessions
 Owner only (Cognito). Returns every participant session (owner's own session first, `type: "Owner"`),

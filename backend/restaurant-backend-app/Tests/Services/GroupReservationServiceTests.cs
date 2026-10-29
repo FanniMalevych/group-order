@@ -59,7 +59,7 @@ public class GroupReservationServiceTests
             .ReturnsAsync(reservation);
 
         _guestSessionRepositoryMock
-            .Setup(r => r.CountByGroupReservationId(groupReservation.GroupReservationId))
+            .Setup(r => r.CountGuestsByGroupReservationId(groupReservation.GroupReservationId))
             .ReturnsAsync(0);
 
         _tableRepositoryMock
@@ -130,7 +130,7 @@ public class GroupReservationServiceTests
             .ReturnsAsync(reservation);
 
         _guestSessionRepositoryMock
-            .Setup(r => r.CountByGroupReservationId(groupReservation.GroupReservationId))
+            .Setup(r => r.CountGuestsByGroupReservationId(groupReservation.GroupReservationId))
             .ReturnsAsync(reservation.GuestCount);
 
         await Assert.ThrowsAsync<GuestLimitExceededException>(() => _service.GetGroupReservationByTokenAsync(groupReservation.ReservationToken));

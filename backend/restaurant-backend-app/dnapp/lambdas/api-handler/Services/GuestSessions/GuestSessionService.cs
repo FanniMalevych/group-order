@@ -46,7 +46,7 @@ public class GuestSessionService(
         GroupReservation group = await GetGroupReservationAndValidateAsync(request.GroupReservationId);
 
         Task<Reservation?> reservationTask = reservationRepository.GetReservationByIdAsync(group.ReservationId);
-        Task<int> countTask = guestSessionRepository.CountByGroupReservationId(group.GroupReservationId);
+        Task<int> countTask = guestSessionRepository.CountGuestsByGroupReservationId(group.GroupReservationId);
 
         Reservation reservation = await reservationTask ?? throw new GroupReservationExpiredException($"Associated reservation for group '{request.GroupReservationId}' not found.");
 
@@ -245,9 +245,9 @@ public class GuestSessionService(
     {
         var sessions = await guestSessionRepository.GetAllByGroupReservationIdAsync(groupReservationId);
 
-        // Owner is always 1 active participant. 
+        // Owner is always 1 active participant, whether or not their own session exists yet.
         // If sessions is null/empty, it safely evaluates to 0 joined guests + 1 owner = 1.
-        return (sessions?.Count ?? 0) + 1;
+        return (sessions?.Count(s => !s.IsOwnerSession) ?? 0) + 1;
     }
 
     private async Task ValidateGroupReservationId(string groupReservationId) => await GetGroupReservationAndValidateAsync(groupReservationId);

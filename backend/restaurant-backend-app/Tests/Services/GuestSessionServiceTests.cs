@@ -72,7 +72,7 @@ public class GuestSessionServiceTests
             .Callback<GuestSession>(s => session = s);
 
         _mockGuestSessionRepository
-            .Setup(r => r.CountByGroupReservationId(groupReservation.GroupReservationId))
+            .Setup(r => r.CountGuestsByGroupReservationId(groupReservation.GroupReservationId))
             .ReturnsAsync(guestCount);
 
         var response = await _guestSessionService.CreateGuestSessionAsync(request);
@@ -394,7 +394,7 @@ public class GuestSessionServiceTests
             .ReturnsAsync(parentReservation);
 
         _mockGuestSessionRepository
-            .Setup(r => r.CountByGroupReservationId(groupReservation.GroupReservationId))
+            .Setup(r => r.CountGuestsByGroupReservationId(groupReservation.GroupReservationId))
             .ReturnsAsync(guestCount);
 
         var exception = await Assert.ThrowsAsync<GuestLimitExceededException>(() => _guestSessionService.CreateGuestSessionAsync(request));

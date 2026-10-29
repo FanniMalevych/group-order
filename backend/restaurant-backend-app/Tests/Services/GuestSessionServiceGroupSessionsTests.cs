@@ -219,6 +219,19 @@ public class GuestSessionServiceGroupSessionsTests
         _mockGuestSessionRepository.Verify(r => r.GetAllByGroupReservationIdAsync(It.IsAny<string>()), Times.Never);
     }
 
+    [Fact]
+    public async Task GetGroupReservationStatusAsync_OwnerSessionStored_CountsOwnerOnce()
+    {
+        var owner = Guest("owner-session", "Owner", submitted: false);
+        owner.IsOwnerSession = true;
+        SetupSessions(owner, Guest("session1", "Andrii", submitted: false), Guest("session2", "Olena", submitted: false));
+
+        GroupReservationStatusResponse result = await _guestSessionService.GetGroupReservationStatusAsync(GroupId);
+
+        // 2 guests + the owner
+        Assert.Equal(3, result.CurrentParticipants);
+    }
+
     private void SetupSessions(params GuestSession[] sessions)
     {
         _mockGuestSessionRepository

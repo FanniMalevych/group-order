@@ -1237,9 +1237,30 @@ Response: 200 OK
 Errors: `401` no token, `403` caller is not the reservation owner, `404` group reservation or reservation not found.
 
 ### `DELETE` /guest/groups/{groupReservationId}/sessions/{guestSessionId}
+Owner only (Cognito). Removes a guest's session (hard delete) and returns the updated group snapshot,
+same shape as `GET /guest/groups/{groupReservationId}/sessions`.
+
 Response: 200 OK
 ```json
 {
-  "message": "Guest session removed from group successfully."
+  "participants": [
+    {
+      "id": "session2",
+      "type": "Guest",
+      "name": "Olena",
+      "items": [
+        {
+          "dish": { "id": "dish2", "name": "Tom Yum", "price": 220 },
+          "quantity": 1
+        }
+      ],
+      "total": 220,
+      "isSubmitted": false
+    }
+  ],
+  "total": 220
 }
 ```
+Errors: `401` no token, `403` caller is not the reservation owner, `404` group reservation, reservation
+or guest session not found, `400` session belongs to another group / session is the owner's own /
+group is already submitted or closed.

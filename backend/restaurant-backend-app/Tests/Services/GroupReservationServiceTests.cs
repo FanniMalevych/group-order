@@ -48,6 +48,8 @@ public class GroupReservationServiceTests
         groupReservation.ReservationId = reservation.Id;
         groupReservation.Status = GroupReservationStatus.Open;
         reservation.TableId = table.Id;
+        // Random AutoFixture values can be 1, which leaves no room for a guest besides the owner.
+        reservation.GuestCount = 4;
         table.LocationId = location.Id;
 
         _groupReservationRepositoryMock

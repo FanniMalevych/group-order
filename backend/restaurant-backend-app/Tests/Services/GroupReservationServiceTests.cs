@@ -4,6 +4,7 @@ using APIHandler.Exceptions;
 using APIHandler.Models.GroupReservation;
 using APIHandler.Repositories.GroupReservations;
 using APIHandler.Repositories.GuestSessions;
+using APIHandler.Repositories.Orders;
 using APIHandler.Repositories.Reservations;
 using APIHandler.Repositories.Tables;
 using APIHandler.Services.Auth;
@@ -32,6 +33,7 @@ public class GroupReservationServiceTests
             _tableRepositoryMock.Object,
             _reservationRepositoryMock.Object,
             _guestSessionRepositoryMock.Object,
+            new Mock<IOrderRepository>().Object,
             _userServiceMock.Object,
             _locationServiceMock.Object);
     }

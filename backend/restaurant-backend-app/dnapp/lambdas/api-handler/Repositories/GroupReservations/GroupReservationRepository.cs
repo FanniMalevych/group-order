@@ -32,6 +32,20 @@ public class GroupReservationRepository : IGroupReservationRepository
         await _dynamoDbContext.SaveAsync(groupReservation, DynamoConfig.SaveConfig(GroupReservationsTableName));
     }
 
+    public async Task SaveGroupReservationWithOrderAsync(GroupReservation groupReservation, Order order)
+    {
+        var groupWrite = _dynamoDbContext.CreateTransactWrite<GroupReservation>(
+            new TransactWriteConfig { OverrideTableName = GroupReservationsTableName });
+        groupWrite.AddSaveItem(groupReservation);
+
+        var orderWrite = _dynamoDbContext.CreateTransactWrite<Order>(
+            new TransactWriteConfig { OverrideTableName = ResourceNames.OrdersTableName });
+        orderWrite.AddSaveItem(order);
+
+        // Both items are written in one DynamoDB transaction: all or nothing.
+        await _dynamoDbContext.CreateMultiTableTransactWrite(groupWrite, orderWrite).ExecuteAsync();
+    }
+
     public async Task<GroupReservation?> GetGroupReservationByTokenAsync(string token)
     {
         var results = await _dynamoDbContext.QueryAsync<GroupReservation?>(token, new QueryConfig

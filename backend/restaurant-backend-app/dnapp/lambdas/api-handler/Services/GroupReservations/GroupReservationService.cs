@@ -1,15 +1,19 @@
 using APIHandler.Constants;
+using APIHandler.Constants.Orders;
 using APIHandler.Entities;
 using APIHandler.Exceptions;
 using APIHandler.Models.GroupReservation;
 using APIHandler.Models.GuestReservation;
 using APIHandler.Repositories.GroupReservations;
 using APIHandler.Repositories.GuestSessions;
+using APIHandler.Repositories.Orders;
 using APIHandler.Repositories.Reservations;
 using APIHandler.Repositories.Tables;
 using APIHandler.Services.Auth;
 using APIHandler.Services.Locations;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace APIHandler.Services.GroupReservations;
@@ -19,6 +23,7 @@ public class GroupReservationService(
     ITableRepository tableRepository,
     IReservationRepository reservationRepository,
     IGuestSessionRepository guestSessionRepository,
+    IOrderRepository orderRepository,
     IUserService userService,
     ILocationService locationService) : IGroupReservationService
 {
@@ -141,6 +146,78 @@ public class GroupReservationService(
             throw new GroupReservationExpiredException();
 
         return new GetGroupInviteTokenResponse(groupReservation.ReservationToken);
+    }
+
+    public async Task<IReadOnlyList<SubmittedDishResponse>> SubmitGroupPreOrderAsync(string userId, string groupReservationId, string reservationId)
+    {
+        var reservation = await reservationRepository.GetReservationByIdAsync(reservationId)
+            ?? throw new ReservationNotFoundException($"Reservation {reservationId} was not found.");
+
+        if (reservation.CustomerId != userId)
+            throw new ActionForbiddenException("Only the reservation owner can perform this action.");
+
+        var group = await groupReservationRepository.GetGroupReservationByIdAsync(groupReservationId)
+            ?? throw new GroupReservationNotFoundException();
+
+        if (group.ReservationId != reservationId)
+            throw new ValidationException("Group reservation does not belong to this reservation.");
+
+        if (group.Status == GroupReservationStatus.Submitted)
+            throw new GroupReservationSubmittedException();
+
+        if (group.Status == GroupReservationStatus.Closed)
+            throw new GroupReservationExpiredException();
+
+        var sessions = await guestSessionRepository.GetAllByGroupReservationIdAsync(groupReservationId);
+        var submittedSessions = sessions.Where(s => s.IsSubmitted).ToList();
+
+        if (submittedSessions.Count == 0)
+            throw new ValidationException("No participant has submitted their pre-order yet.");
+
+        var dishes = submittedSessions
+            .SelectMany(s => s.Dishes ?? [])
+            .Where(d => d.Quantity > 0)
+            .GroupBy(d => d.DishId)
+            .Select(g => new SubmittedDishResponse(g.Key, g.Sum(d => d.Quantity)))
+            .ToList();
+
+        if (dishes.Count == 0)
+            throw new ValidationException("Submitted pre-orders contain no dishes.");
+
+        var order = await orderRepository.GetOrderByReservationIdAsync(reservationId)
+            ?? throw new ValidationException($"Pre-order for reservation '{reservationId}' not found.");
+
+        MergeIntoOrder(order, dishes);
+        order.Status = OrderStatus.SubmittedByCustomer;
+        group.Status = GroupReservationStatus.Submitted;
+
+        await groupReservationRepository.SaveGroupReservationWithOrderAsync(group, order);
+
+        return dishes;
+    }
+
+    private static void MergeIntoOrder(Order order, IEnumerable<SubmittedDishResponse> dishes)
+    {
+        order.Dishes ??= [];
+
+        foreach (var dish in dishes)
+        {
+            var existing = order.Dishes.FirstOrDefault(d => d.DishId == dish.DishId);
+
+            if (existing != null)
+            {
+                existing.Quantity += dish.Quantity;
+            }
+            else
+            {
+                order.Dishes.Add(new OrderItem
+                {
+                    DishId = dish.DishId,
+                    Quantity = dish.Quantity,
+                    State = OrderItemState.Pending
+                });
+            }
+        }
     }
 }
 

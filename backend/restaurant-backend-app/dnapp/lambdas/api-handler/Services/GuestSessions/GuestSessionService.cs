@@ -178,7 +178,7 @@ public class GuestSessionService(
 
     public async Task<GetAllSessionsResponse> GetGroupSessionsAsync(string userId, string groupReservationId)
     {
-        Reservation reservation = await ValidateReservationOwnerAsync(groupReservationId, userId);
+        var (_, reservation) = await ValidateReservationOwnerAsync(groupReservationId, userId);
 
         return await BuildGroupSnapshotAsync(groupReservationId, reservation);
     }
@@ -186,7 +186,7 @@ public class GuestSessionService(
     
     public async Task<GetAllSessionsResponse> DeleteGuestSessionAsync(string userId, string groupReservationId, string guestSessionId)
     {
-        Reservation reservation = await ValidateReservationOwnerAsync(groupReservationId, userId);
+        var (group, reservation) = await ValidateReservationOwnerAsync(groupReservationId, userId);
 
         var session = await guestSessionRepository.GetByGuestSessionId(guestSessionId)
             ?? throw new GuestSessionNotFoundException($"Guest session with id {guestSessionId} not found.");
@@ -195,6 +195,14 @@ public class GuestSessionService(
         {
             throw new ValidationException("Guest session does not belong to this group reservation.");
         }
+
+        if (session.IsOwnerSession)
+        {
+            throw new ValidationException("The owner's own session cannot be removed from the group.");
+        }
+
+        // After submit the order already contains this guest's dishes; removing them here would not undo that.
+        ValidateGroupReservation(group);
 
         await guestSessionRepository.DeleteAsync(session);
 
@@ -282,7 +290,7 @@ public class GuestSessionService(
     }
 
     
-    private async Task<Reservation> ValidateReservationOwnerAsync(string groupReservationId, string userId)
+    private async Task<(GroupReservation Group, Reservation Reservation)> ValidateReservationOwnerAsync(string groupReservationId, string userId)
     {
         var group = await groupReservationRepository.GetGroupReservationByIdAsync(groupReservationId)
             ?? throw new GroupReservationNotFoundException();
@@ -295,7 +303,7 @@ public class GuestSessionService(
             throw new ActionForbiddenException("Only the reservation owner can perform this action.");
         }
 
-        return reservation;
+        return (group, reservation);
     }
 
     private async Task<GetAllSessionsResponse> BuildGroupSnapshotAsync(

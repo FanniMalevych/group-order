@@ -125,6 +125,38 @@ public class GuestSessionServiceDeleteSessionTests
             () => _guestSessionService.DeleteGuestSessionAsync(OwnerId, GroupId, "session2"));
     }
 
+    [Fact]
+    public async Task DeleteGuestSessionAsync_OwnerSession_ThrowsValidationException()
+    {
+        var exception = await AssertThrowsWithoutDeleting<ValidationException>(
+            () => _guestSessionService.DeleteGuestSessionAsync(OwnerId, GroupId, "owner-session"));
+
+        Assert.Contains("owner", exception.Message);
+    }
+
+    [Theory]
+    [InlineData(GroupReservationStatus.Submitted, typeof(GroupReservationSubmittedException))]
+    [InlineData(GroupReservationStatus.Closed, typeof(GroupReservationExpiredException))]
+    public async Task DeleteGuestSessionAsync_GroupNotOpen_ThrowsWithoutDeleting(GroupReservationStatus status, Type exceptionType)
+    {
+        _group.Status = status;
+
+        await Assert.ThrowsAsync(exceptionType,
+            () => _guestSessionService.DeleteGuestSessionAsync(OwnerId, GroupId, "session2"));
+
+        _mockGuestSessionRepository.Verify(r => r.DeleteAsync(It.IsAny<GuestSession>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteGuestSessionAsync_SubmittedGuestInOpenGroup_IsDeleted()
+    {
+        _olena.IsSubmitted = true;
+
+        await _guestSessionService.DeleteGuestSessionAsync(OwnerId, GroupId, "session2");
+
+        _mockGuestSessionRepository.Verify(r => r.DeleteAsync(_olena), Times.Once);
+    }
+
     private async Task<T> AssertThrowsWithoutDeleting<T>(Func<Task> action) where T : Exception
     {
         var exception = await Assert.ThrowsAsync<T>(action);

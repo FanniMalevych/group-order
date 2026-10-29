@@ -61,6 +61,9 @@ public class DeleteGuestSessionHandlerTests
         { new ReservationNotFoundException("Parent reservation not found."), 404 },
         { new GuestSessionNotFoundException("Guest session not found."), 404 },
         { new ValidationException("Guest session does not belong to this group reservation."), 400 },
+        { new ValidationException("The owner's own session cannot be removed from the group."), 400 },
+        { new GroupReservationSubmittedException(), 400 },
+        { new GroupReservationExpiredException(), 400 },
     };
 
     [Theory]

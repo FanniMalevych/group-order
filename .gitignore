@@ -30,3 +30,7 @@ bin/
 obj/
 *.user
 TestResults/
+
+# Python
+syndicate_venv/
+__pycache__/

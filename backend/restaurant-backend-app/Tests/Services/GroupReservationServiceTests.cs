@@ -4,6 +4,7 @@ using APIHandler.Exceptions;
 using APIHandler.Models.GroupReservation;
 using APIHandler.Repositories.GroupReservations;
 using APIHandler.Repositories.GuestSessions;
+using APIHandler.Repositories.Orders;
 using APIHandler.Repositories.Reservations;
 using APIHandler.Repositories.Tables;
 using APIHandler.Services.Auth;
@@ -32,6 +33,7 @@ public class GroupReservationServiceTests
             _tableRepositoryMock.Object,
             _reservationRepositoryMock.Object,
             _guestSessionRepositoryMock.Object,
+            new Mock<IOrderRepository>().Object,
             _userServiceMock.Object,
             _locationServiceMock.Object);
     }
@@ -48,6 +50,8 @@ public class GroupReservationServiceTests
         groupReservation.ReservationId = reservation.Id;
         groupReservation.Status = GroupReservationStatus.Open;
         reservation.TableId = table.Id;
+        // Random AutoFixture values can be 1, which leaves no room for a guest besides the owner.
+        reservation.GuestCount = 4;
         table.LocationId = location.Id;
 
         _groupReservationRepositoryMock
@@ -59,7 +63,7 @@ public class GroupReservationServiceTests
             .ReturnsAsync(reservation);
 
         _guestSessionRepositoryMock
-            .Setup(r => r.CountByGroupReservationId(groupReservation.GroupReservationId))
+            .Setup(r => r.CountGuestsByGroupReservationId(groupReservation.GroupReservationId))
             .ReturnsAsync(0);
 
         _tableRepositoryMock
@@ -130,7 +134,7 @@ public class GroupReservationServiceTests
             .ReturnsAsync(reservation);
 
         _guestSessionRepositoryMock
-            .Setup(r => r.CountByGroupReservationId(groupReservation.GroupReservationId))
+            .Setup(r => r.CountGuestsByGroupReservationId(groupReservation.GroupReservationId))
             .ReturnsAsync(reservation.GuestCount);
 
         await Assert.ThrowsAsync<GuestLimitExceededException>(() => _service.GetGroupReservationByTokenAsync(groupReservation.ReservationToken));

@@ -6,7 +6,10 @@ namespace APIHandler.Repositories.GuestSessions;
 
 public interface IGuestSessionRepository
 {
-    Task<int> CountByGroupReservationId(string groupReservationId);
+    /// <summary>
+    /// Counts joined guests only; the owner's own session is not a guest.
+    /// </summary>
+    Task<int> CountGuestsByGroupReservationId(string groupReservationId);
 
     Task<GuestSession?> GetByGroupReservationId(string groupReservationId);
 

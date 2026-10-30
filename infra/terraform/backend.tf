@@ -2,9 +2,9 @@ terraform {
   required_version = ">= 1.10"
 
   backend "s3" {
-    bucket       = "restaurant-terraform-state-{your_account_id}"
+    bucket       = "restaurant-terraform-state-921687355139"
     key          = "restaurant/terraform.tfstate"
-    region       = "us-west-2"
+    region       = "eu-north-1"
     use_lockfile = true
     encrypt      = true
   }

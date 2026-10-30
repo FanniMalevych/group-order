@@ -1,5 +1,5 @@
-account_id: "your_account_id" #replace with your AWS account ID
-region: "us-west-2"
+account_id: "921687355139"
+region: "eu-north-1"
 lambdas_alias_name: "dev"
 logs_expiration: 30
 
@@ -28,7 +28,7 @@ reservations-waiterId-global-index: "GSI_WaiterId"
 orders_index_reservationid: "GSI_ReservationId"
 notifications_userId-global-index: "UserIdIndex"
 
-imagesBucketName: "restaurant-backend-dev-images-{your_account_id}" #replace with your S3 bucket name for images
-profileImagesBucketName: "restaurant-backend-dev-profile-images-{your_account_id}" #replace with your S3 bucket name for profile images
-swagger_ui_hoster_bucket_name: "restaurant-backend-dev-swagger-ui-{your_account_id}" #replace with your globally unique S3 bucket name for Swagger UI hosting
+imagesBucketName: "restaurant-backend-dev-images-921687355139"
+profileImagesBucketName: "restaurant-backend-dev-profile-images-921687355139"
+swagger_ui_hoster_bucket_name: "restaurant-backend-dev-swagger-ui-921687355139"
 email_from: "" #TODO: investigate how this value is used

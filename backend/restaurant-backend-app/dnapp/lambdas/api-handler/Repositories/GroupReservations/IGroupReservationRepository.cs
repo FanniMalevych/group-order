@@ -10,5 +10,6 @@ public interface IGroupReservationRepository
     Task<GroupReservation?> GetGroupReservationByIdAsync(string groupReservationId);
     Task DeleteGroupReservationAsync(GroupReservation groupReservation);
     Task SaveGroupReservationAsync(GroupReservation groupReservation);
+    Task SaveGroupReservationWithOrderAsync(GroupReservation groupReservation, Order order);
     Task<GroupReservation?> GetGroupReservationByTokenAsync(string token);
 }

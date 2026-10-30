@@ -1,13 +1,13 @@
 variable "aws_region" {
   description = "AWS region for all resources except CloudFront/ACM globals"
   type        = string
-  default     = "us-west-2"
+  default     = "eu-north-1"
 }
 
 variable "account_id" {
   description = "AWS account ID"
   type        = string
-  default     = "your_account_id"
+  default     = "921687355139"
 }
 
 variable "alert_emails" {
